@@ -2,8 +2,8 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>LINE Talk - チャットクライアント</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LINE Talk - トークルーム</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -15,11 +15,11 @@
               brand: '#06C755',
               brandHover: '#05B04B',
               bg: '#8CABD9',
-              bgDark: '#191F2B',
+              bgDark: '#1A202C',
               bubbleMe: '#8FE25F',
               bubbleMeDark: '#2D8A4E',
               bubbleOther: '#FFFFFF',
-              bubbleOtherDark: '#2C3440'
+              bubbleOtherDark: '#2D3748'
             }
           }
         }
@@ -35,7 +35,7 @@
       content: '';
       position: absolute;
       top: 10px;
-      right: -5px;
+      right: -6px;
       width: 10px;
       height: 10px;
       background-color: #8FE25F;
@@ -53,7 +53,7 @@
       content: '';
       position: absolute;
       top: 10px;
-      left: -5px;
+      left: -6px;
       width: 10px;
       height: 10px;
       background-color: #FFFFFF;
@@ -62,7 +62,15 @@
       z-index: 0;
     }
     .dark .bubble-other-tail::after {
-      background-color: #2C3440;
+      background-color: #2D3748;
+    }
+    /* スクロールバー非表示 */
+    .scrollbar-none::-webkit-scrollbar {
+      display: none;
+    }
+    .scrollbar-none {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
     /* トークエリアのスクロール */
     #messagesContainer::-webkit-scrollbar {
@@ -72,65 +80,65 @@
       background: transparent;
     }
     #messagesContainer::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.15);
+      background: rgba(0, 0, 0, 0.12);
       border-radius: 9999px;
     }
   </style>
 </head>
 <body class="bg-line-bg dark:bg-line-bgDark text-zinc-900 dark:text-zinc-100 font-sans min-h-screen flex flex-col transition-colors duration-200">
   
-  <!-- 1. HEADER (LINE トークヘッダー) -->
-  <header class="bg-[#1E2A3A]/95 dark:bg-zinc-950/95 backdrop-blur text-white px-4 py-3 sticky top-0 z-20 flex items-center justify-between shadow-sm">
+  <!-- 1. HEADER (LINE Talk トークヘッダー) -->
+  <header class="bg-[#1E2A3A]/90 dark:bg-zinc-950/95 backdrop-blur text-white px-4 py-3 sticky top-0 z-20 flex items-center justify-between shadow-sm">
     <div class="flex items-center gap-3">
-      <button id="backBtn" class="p-1.5 hover:bg-white/10 rounded-full transition-colors hidden" title="ログアウト">
+      <button id="backBtn" class="p-1 hover:bg-white/10 rounded-full transition-colors hidden" title="設定に戻る">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
       </button>
       <div>
         <div class="flex items-center gap-1.5">
-          <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" id="connectionDot"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" id="connectionDot"></span>
           <h1 class="font-bold text-base tracking-wide" id="headerTitle">LINE Talk</h1>
         </div>
-        <p class="text-[10px] text-zinc-300 font-medium" id="headerSubtext">未接続</p>
+        <p class="text-[10px] text-zinc-300 font-medium">部屋ID: <span class="font-mono font-bold bg-white/10 px-1 py-0.5 rounded" id="roomIdDisplay">接続時に表示</span> <span id="onlineCount" class="ml-1 opacity-90"></span></p>
       </div>
     </div>
     <div class="flex items-center gap-2">
-      <button id="themeToggleBtn" class="p-2 hover:bg-white/10 rounded-xl transition-all text-sm" title="ダークモード切替">
+      <button id="themeToggleBtn" class="p-2 hover:bg-white/10 rounded-xl transition-all text-sm" title="テーマ変更">
         🌓
       </button>
     </div>
   </header>
 
-  <!-- 2. LOGIN / SETUP VIEW (プロフィール & 部屋ID設定) -->
+  <!-- 2. LOGIN / SETUP VIEW (LINEのプロフィール設定画面) -->
   <main id="setupView" class="flex-1 flex flex-col justify-center items-center p-4">
-    <div class="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-3xl p-6 md:p-8 w-full max-w-sm shadow-2xl text-center space-y-5">
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-3xl p-6 md:p-8 w-full max-w-sm shadow-2xl text-center space-y-6">
       
-      <!-- LINE吹き出しロゴ -->
+      <!-- LINE公式風吹き出しロゴ -->
       <div class="flex flex-col items-center">
         <div class="w-16 h-16 bg-line-brand text-white font-extrabold rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-emerald-100 dark:shadow-none animate-bounce">
           💬
         </div>
-        <h2 class="text-xl font-extrabold mt-3 text-zinc-800 dark:text-zinc-100">LINE Talk Client</h2>
-        <p class="text-[11px] text-zinc-400 mt-1 max-w-xs leading-relaxed">ファイルをダブルクリックするだけで起動し、本番サーバーのチャットルームと安全に通信できます。</p>
+        <h2 class="text-xl font-extrabold mt-4 text-zinc-800 dark:text-zinc-100">LINE Talk お持ち帰り版</h2>
+        <p class="text-[11px] text-zinc-400 mt-1 max-w-xs leading-relaxed">このHTMLファイルをダブルクリックするだけで、現在進行中のトークルームにいつでも安全にアクセスできます。</p>
+      </div>
+
+      <!-- 部屋ID設定 -->
+      <div class="space-y-2 text-left">
+        <label class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">部屋ID（Room ID）</label>
+        <input type="text" id="roomIdInput" class="w-full py-3 px-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-line-brand/50 focus:border-line-brand focus:outline-none font-bold text-sm text-zinc-800 dark:text-zinc-100" placeholder="部屋IDを入力（例: lobby）" value="lobby">
       </div>
 
       <!-- アバター選択 -->
-      <div class="space-y-1.5 text-left">
-        <label class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">キャラクター選択</label>
+      <div class="space-y-2 text-left">
+        <label class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">プロフィール画像</label>
         <div class="grid grid-cols-6 gap-2" id="avatarGrid">
           <!-- JSでレンダリング -->
         </div>
       </div>
 
-      <!-- 部屋番号入力 -->
-      <div class="space-y-1.5 text-left">
-        <label class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">トークルーム番号（任意の数字や英字）</label>
-        <input type="text" id="roomIdInput" class="w-full py-2.5 px-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-line-brand/50 focus:border-line-brand focus:outline-none font-bold text-sm text-zinc-800 dark:text-zinc-100" placeholder="友達と同じ部屋番号（例: 123456）">
-      </div>
-
       <!-- ニックネーム入力 -->
-      <div class="space-y-1.5 text-left">
-        <label class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">表示名</label>
-        <input type="text" id="nicknameInput" maxlength="15" class="w-full py-2.5 px-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-line-brand/50 focus:border-line-brand focus:outline-none font-bold text-sm text-zinc-800 dark:text-zinc-100" placeholder="名前を入力してください">
+      <div class="space-y-2 text-left">
+        <label class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">表示するお名前</label>
+        <input type="text" id="nicknameInput" maxlength="15" class="w-full py-3 px-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-line-brand/50 focus:border-line-brand focus:outline-none font-bold text-sm text-zinc-800 dark:text-zinc-100" placeholder="ニックネームを入力してください">
       </div>
 
       <!-- 参加ボタン -->
@@ -140,7 +148,7 @@
     </div>
   </main>
 
-  <!-- 3. CHAT VIEW -->
+  <!-- 3. CHAT VIEW (LINEそっくりのトーク画面) -->
   <main id="chatView" class="hidden flex-1 flex flex-col overflow-hidden max-w-2xl w-full mx-auto relative">
     
     <!-- ドラッグ＆ドロップ用オーバーレイ -->
@@ -148,29 +156,47 @@
       <div class="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-xl flex flex-col items-center gap-3">
         <span class="text-4xl animate-bounce">📁</span>
         <p class="font-extrabold text-zinc-800 dark:text-zinc-100 text-sm">ここにファイルをドロップして送信</p>
-        <p class="text-[10px] text-zinc-400">写真やドキュメントを即座に共有できます</p>
+        <p class="text-[10px] text-zinc-400">画像・動画・PDFなどをすばやく共有できます</p>
       </div>
     </div>
 
     <!-- トークメッセージリスト -->
     <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
-      <!-- メッセージ描画領域 -->
+      <!-- メッセージがここに描画されます -->
     </div>
 
-    <!-- アップロード表示 -->
+    <!-- 送信中・アップロード中ステータス -->
     <div id="uploadingIndicator" class="px-4 py-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border-t border-zinc-100 dark:border-zinc-800 flex items-center gap-2 text-xs text-zinc-500 hidden">
       <div class="w-3.5 h-3.5 border-2 border-line-brand border-t-transparent rounded-full animate-spin"></div>
-      <span>画像をアップロード中...</span>
+      <span>ファイルをアップロード中...</span>
     </div>
 
     <!-- LINE風フッター入力エリア -->
-    <footer class="bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-900 p-2 md:p-3 flex items-end gap-2 sticky bottom-0 z-10">
+    <footer class="bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-900 p-2 md:p-3 flex items-end gap-2 sticky bottom-0 z-10 relative">
       
+      <!-- スタンプ選択パネル -->
+      <div id="stickerPicker" class="absolute bottom-full mb-2 left-2 z-50 w-72 p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl transition-all hidden scale-95 opacity-0 origin-bottom-left">
+        <div class="flex justify-between items-center mb-2 pb-1.5 border-b border-zinc-100 dark:border-zinc-800">
+          <span class="text-xs font-extrabold text-zinc-700 dark:text-zinc-300">LINEスタンプ風絵文字</span>
+          <button type="button" id="closeStickerBtn" class="p-1 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        <div class="grid grid-cols-5 gap-2 max-h-48 overflow-y-auto pr-1" id="stickerGrid">
+          <!-- JSでレンダリング -->
+        </div>
+      </div>
+
       <!-- ファイル添付ボタン -->
       <button id="fileBtn" class="p-2.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-line-brand transition-colors flex-shrink-0" title="画像・ファイルを送信">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
       </button>
       <input type="file" id="fileInput" class="hidden" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt">
+
+      <!-- スタンプボタン -->
+      <button id="stickerBtn" class="p-2.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-line-brand transition-colors flex-shrink-0" title="スタンプを送信">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      </button>
 
       <!-- テキスト入力 -->
       <div class="flex-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl px-3 py-2 border border-zinc-200/50 dark:border-zinc-800/50 focus-within:ring-2 focus-within:ring-line-brand/30 transition-shadow">
@@ -185,22 +211,25 @@
   </main>
 
   <script>
-    // 🌐 【重要】接続先サーバー情報
-    const WS_SERVER = "wss://ais-dev-zgjvqvivh4qdpuw4v2hl7b-947807142449.asia-east1.run.app";
+    // 自動的に実行中のサーバーホストを検出してWebSocketを設定
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const WS_SERVER = `${protocol}//${window.location.host || 'ais-dev-zgjvqvivh4qdpuw4v2hl7b-947807142449.asia-east1.run.app'}`;
     
+    let ROOM_ID = "lobby";
     let ws = null;
-    let targetRoomId = "";
     let myName = "";
     let myId = "";
-    let selectedAvatar = "🐻";
+    let activeUsersCount = 1;
+    let selectedAvatar = "🐻"; // デフォルト
     
-    // LINE風アバター定義
+    // アバター定義
     const avatars = ["🐻", "🐰", "🐥", "🐸", "🐱", "🐼", "🦁", "🐵", "🦊", "🐨", "🐧", "🦄"];
 
     const setupView = document.getElementById("setupView");
     const chatView = document.getElementById("chatView");
     const nicknameInput = document.getElementById("nicknameInput");
     const roomIdInput = document.getElementById("roomIdInput");
+    const roomIdDisplay = document.getElementById("roomIdDisplay");
     const joinBtn = document.getElementById("joinBtn");
     const backBtn = document.getElementById("backBtn");
     const messageInput = document.getElementById("messageInput");
@@ -209,7 +238,7 @@
     const themeToggleBtn = document.getElementById("themeToggleBtn");
     const connectionDot = document.getElementById("connectionDot");
     const headerTitle = document.getElementById("headerTitle");
-    const headerSubtext = document.getElementById("headerSubtext");
+    const onlineCount = document.getElementById("onlineCount");
     const avatarGrid = document.getElementById("avatarGrid");
     
     const fileBtn = document.getElementById("fileBtn");
@@ -217,13 +246,17 @@
     const uploadingIndicator = document.getElementById("uploadingIndicator");
     const dropOverlay = document.getElementById("dropOverlay");
 
+    const stickerBtn = document.getElementById("stickerBtn");
+    const stickerPicker = document.getElementById("stickerPicker");
+    const closeStickerBtn = document.getElementById("closeStickerBtn");
+    const stickerGrid = document.getElementById("stickerGrid");
+
     // 保存データのロード
     const savedName = localStorage.getItem("line_saved_name") || "";
     const savedAvatar = localStorage.getItem("line_saved_avatar") || "🐻";
-    const savedRoomId = localStorage.getItem("line_saved_room_id") || "123456";
-    
+    const savedRoomId = localStorage.getItem("line_saved_room") || "lobby";
     if (savedName) nicknameInput.value = savedName;
-    roomIdInput.value = savedRoomId;
+    if (savedRoomId) roomIdInput.value = savedRoomId;
     selectedAvatar = savedAvatar;
 
     // アバターグリッド構築
@@ -232,7 +265,7 @@
       avatars.forEach(av => {
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "aspect-square text-2xl flex items-center justify-center bg-zinc-50 dark:bg-zinc-850 hover:bg-zinc-100 border-2 rounded-xl transition-all " + 
+        btn.className = "aspect-square text-2xl flex items-center justify-center bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 border-2 rounded-xl transition-all " + 
           (av === selectedAvatar ? "border-line-brand bg-emerald-50/50 dark:bg-emerald-950/20 scale-105" : "border-transparent");
         btn.innerText = av;
         btn.addEventListener("click", () => {
@@ -244,7 +277,67 @@
     }
     renderAvatarGrid();
 
-    // ダークモード・テーマの復元
+    // スタンプグリッド構築
+    const STICKERS_LIST = [
+      { id: "bear_ok", emoji: "🐻", label: "OK!" },
+      { id: "bunny_love", emoji: "🐰", label: "ありがとう" },
+      { id: "chick_congrats", emoji: "🐥", label: "おめでとう" },
+      { id: "cat_angry", emoji: "🐱", label: "おこ！" },
+      { id: "panda_cry", emoji: "🐼", label: "えーん" },
+      { id: "frog_shock", emoji: "🐸", label: "ガーン！" },
+      { id: "koala_sleep", emoji: "🐨", label: "おやすみ" },
+      { id: "lion_gogogo", emoji: "🦁", label: "ファイト！" },
+      { id: "monkey_sorry", emoji: "🐵", label: "ごめんね" },
+      { id: "fox_sparkle", emoji: "🦊", label: "お疲れさま" }
+    ];
+
+    function renderStickerGrid() {
+      stickerGrid.innerHTML = "";
+      STICKERS_LIST.forEach(st => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "flex flex-col items-center justify-center p-2 rounded-xl border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all active:scale-95";
+        btn.title = st.label;
+        btn.innerHTML = '<span class="text-3xl leading-none mb-1 select-none">' + st.emoji + '</span><span class="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 truncate w-full text-center leading-none">' + st.label + '</span>';
+        btn.addEventListener("click", () => {
+          sendSticker(st.id);
+        });
+        stickerGrid.appendChild(btn);
+      });
+    }
+    renderStickerGrid();
+
+    stickerBtn.addEventListener("click", () => {
+      const isHidden = stickerPicker.classList.contains("hidden");
+      if (isHidden) {
+        stickerPicker.classList.remove("hidden");
+        setTimeout(() => {
+          stickerPicker.classList.remove("scale-95", "opacity-0");
+        }, 10);
+      } else {
+        hideStickerPicker();
+      }
+    });
+
+    closeStickerBtn.addEventListener("click", hideStickerPicker);
+
+    function hideStickerPicker() {
+      stickerPicker.classList.add("scale-95", "opacity-0");
+      setTimeout(() => {
+        stickerPicker.classList.add("hidden");
+      }, 200);
+    }
+
+    function sendSticker(stickerId) {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      ws.send(JSON.stringify({
+        type: "message",
+        stickerId: stickerId
+      }));
+      hideStickerPicker();
+    }
+
+    // ダークモード
     const isDarkSaved = localStorage.getItem("line_dark_theme") === "true";
     if (isDarkSaved) {
       document.documentElement.classList.add("dark");
@@ -255,42 +348,32 @@
       localStorage.setItem("line_dark_theme", document.documentElement.classList.contains("dark"));
     });
 
-    function resetJoinButton() {
-      joinBtn.disabled = false;
-      joinBtn.innerText = "トークを開始する";
-    }
-
     joinBtn.addEventListener("click", () => {
       myName = nicknameInput.value.trim();
-      targetRoomId = roomIdInput.value.replace(/\s+/g, "");
-      
-      if (!targetRoomId) {
-        alert("トークルーム番号（部屋ID）を入力してください。");
-        return;
-      }
+      ROOM_ID = roomIdInput.value.trim() || "lobby";
       if (!myName) {
-        alert("お名前（表示名）を入力してください。");
+        alert("お名前（ニックネーム）を入力してください。");
         return;
       }
-      
       localStorage.setItem("line_saved_name", myName);
       localStorage.setItem("line_saved_avatar", selectedAvatar);
-      localStorage.setItem("line_saved_room_id", targetRoomId);
-      
+      localStorage.setItem("line_saved_room", ROOM_ID);
+      roomIdDisplay.innerText = ROOM_ID;
       connectWebSocket();
     });
 
     backBtn.addEventListener("click", () => {
-      if (ws) ws.close();
+      if (ws) {
+        ws.close();
+      }
       chatView.classList.add("hidden");
       backBtn.classList.add("hidden");
       setupView.classList.remove("hidden");
       headerTitle.innerText = "LINE Talk";
-      headerSubtext.innerText = "未接続";
-      connectionDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse";
+      onlineCount.innerText = "";
     });
 
-    // テキストエリア自動伸縮とEnter送信
+    // Enter送信
     messageInput.addEventListener("input", function() {
       this.style.height = "auto";
       this.style.height = (this.scrollHeight) + "px";
@@ -377,15 +460,22 @@
       }
     });
 
+    function resetJoinButton() {
+      joinBtn.disabled = false;
+      joinBtn.innerText = "トークを開始する";
+    }
+
     // WebSocket 接続
     function connectWebSocket() {
-      connectionDot.className = "w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse";
+      connectionDot.classList.remove("bg-emerald-500", "bg-rose-500");
+      connectionDot.classList.add("bg-amber-500");
+      
       joinBtn.disabled = true;
       joinBtn.innerText = "接続中...";
       
       let connectTimeout = setTimeout(() => {
         if (!ws || ws.readyState !== WebSocket.OPEN) {
-          alert("サーバー接続がタイムアウトしました。サーバーの起動に少し時間がかかっている可能性があります。10秒ほど待ってからもう一度お試しください。");
+          alert("サーバーへの接続がタイムアウトしました。もう一度お試しください。");
           resetJoinButton();
           if (ws) ws.close();
         }
@@ -395,11 +485,12 @@
 
       ws.onopen = () => {
         clearTimeout(connectTimeout);
-        connectionDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+        connectionDot.classList.remove("bg-amber-500");
+        connectionDot.classList.add("bg-emerald-500");
         
         ws.send(JSON.stringify({
           type: "join",
-          roomId: targetRoomId,
+          roomId: ROOM_ID,
           userName: myName,
           avatar: selectedAvatar
         }));
@@ -407,7 +498,7 @@
         setupView.classList.add("hidden");
         chatView.classList.remove("hidden");
         backBtn.classList.remove("hidden");
-        headerTitle.innerText = "部屋: " + targetRoomId;
+        headerTitle.innerText = "トークルーム";
         resetJoinButton();
       };
 
@@ -418,18 +509,45 @@
           if (data.type === "init") {
             myId = data.userId;
             messagesContainer.innerHTML = "";
-            updateUserCount(data.users.length);
+            activeUsersCount = data.users.length;
+            updateUserCount(activeUsersCount);
             data.messages.forEach(msg => {
               appendMessage(msg);
             });
+            sendReadReceipts(data.messages);
           } else if (data.type === "message") {
             appendMessage(data.message);
+            if (data.message.senderId !== myId) {
+              sendReadReceipts([data.message]);
+            }
           } else if (data.type === "user_joined") {
             appendSystemMessage("📢 " + data.user.avatar + " " + data.user.userName + "さんが参加しました");
-            if (data.users) updateUserCount(data.users.length);
+            activeUsersCount++;
+            updateUserCount(activeUsersCount);
           } else if (data.type === "user_left") {
             appendSystemMessage("📢 ユーザーが退室しました");
-            if (data.users) updateUserCount(data.users.length);
+            if (activeUsersCount > 1) activeUsersCount--;
+            updateUserCount(activeUsersCount);
+          } else if (data.type === "read_update") {
+            const { messageIds, userId } = data;
+            messageIds.forEach(id => {
+              const msgEl = document.getElementById("msg_" + id);
+              if (msgEl) {
+                let readBy = JSON.parse(msgEl.getAttribute("data-read-by") || "[]");
+                if (!readBy.includes(userId)) {
+                  readBy.push(userId);
+                  msgEl.setAttribute("data-read-by", JSON.stringify(readBy));
+                  const countLabel = msgEl.querySelector(".read-count-label");
+                  if (countLabel) {
+                    const readCount = readBy.filter(uId => uId !== msgEl.getAttribute("data-sender-id")).length;
+                    if (readCount > 0) {
+                      countLabel.innerText = "既読" + (activeUsersCount > 2 ? (" " + readCount) : "");
+                      countLabel.classList.remove("hidden");
+                    }
+                  }
+                }
+              }
+            });
           }
         } catch(e) {
           console.error(e);
@@ -439,20 +557,35 @@
       ws.onerror = (err) => {
         clearTimeout(connectTimeout);
         console.error("WebSocket Error:", err);
-        alert("サーバーに接続できませんでした。サーバーがオフラインであるか、スリープに入っている可能性があります。時間をおいて再試行してください。");
+        alert("サーバーに接続できませんでした。サーバーが立ち上がっていないかスリープ中の可能性があります。");
         resetJoinButton();
       };
 
       ws.onclose = () => {
         clearTimeout(connectTimeout);
-        connectionDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse";
+        connectionDot.classList.remove("bg-emerald-500", "bg-amber-500");
+        connectionDot.classList.add("bg-rose-500");
         appendSystemMessage("⚠️ 接続が切れました。再接続をお試しください。");
         resetJoinButton();
       };
     }
 
+    function sendReadReceipts(msgs) {
+      if (!ws || ws.readyState !== WebSocket.OPEN || !myId) return;
+      const unreadIds = msgs
+        .filter(m => m.senderId !== "system" && m.senderId !== myId && (!m.readBy || !m.readBy.includes(myId)))
+        .map(m => m.id);
+      
+      if (unreadIds.length > 0) {
+        ws.send(JSON.stringify({
+          type: "read",
+          messageIds: unreadIds
+        }));
+      }
+    }
+
     function updateUserCount(count) {
-      headerSubtext.innerText = "接続中 • メンバー: " + count + "人";
+      onlineCount.innerText = " (メンバー: " + count + "人)";
     }
 
     function appendMessage(msg) {
@@ -463,6 +596,11 @@
 
       const isMe = msg.senderId === myId;
       const msgDiv = document.createElement("div");
+      msgDiv.id = "msg_" + msg.id;
+      msgDiv.setAttribute("data-sender-id", msg.senderId);
+      const initialReadBy = msg.readBy || [msg.senderId];
+      msgDiv.setAttribute("data-read-by", JSON.stringify(initialReadBy));
+
       msgDiv.className = "flex items-start gap-2 " + (isMe ? "flex-row-reverse" : "flex-row") + " animate-in fade-in duration-200";
       
       const time = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -471,13 +609,13 @@
       if (msg.fileData) {
         if (msg.fileType === "image") {
           mediaContent = `
-            <div class="mt-1.5 overflow-hidden rounded-xl border border-zinc-200/50 dark:border-zinc-800/50 max-w-xs shadow-md bg-white dark:bg-zinc-900">
+            <div class="mt-1.5 overflow-hidden rounded-xl border border-zinc-200/50 dark:border-zinc-800/50 max-w-xs shadow-md">
               <img src="${msg.fileData}" alt="${msg.fileName}" class="max-h-60 object-cover w-full cursor-pointer hover:scale-[1.01] transition-transform" onclick="window.open(this.src)" referrerPolicy="no-referrer">
             </div>`;
         } else if (msg.fileType === "video") {
           mediaContent = `
-            <div class="mt-1.5 overflow-hidden rounded-xl border border-zinc-200/50 dark:border-zinc-800/50 max-w-xs shadow-md bg-black">
-              <video src="${msg.fileData}" controls class="max-h-60 w-full"></video>
+            <div class="mt-1.5 overflow-hidden rounded-xl border border-zinc-200/50 dark:border-zinc-800/50 max-w-xs shadow-md">
+              <video src="${msg.fileData}" controls class="max-h-60 w-full bg-black"></video>
             </div>`;
         } else {
           mediaContent = `
@@ -491,19 +629,58 @@
         }
       }
 
+      // スタンプ一覧
+      const STICKERS = [
+        { id: "bear_ok", emoji: "🐻", label: "OK!" },
+        { id: "bunny_love", emoji: "🐰", label: "ありがとう" },
+        { id: "chick_congrats", emoji: "🐥", label: "おめでとう" },
+        { id: "cat_angry", emoji: "🐱", label: "おこ！" },
+        { id: "panda_cry", emoji: "🐼", label: "えーん" },
+        { id: "frog_shock", emoji: "🐸", label: "ガーン！" },
+        { id: "koala_sleep", emoji: "🐨", label: "おやすみ" },
+        { id: "lion_gogogo", emoji: "🦁", label: "ファイト！" },
+        { id: "monkey_sorry", emoji: "🐵", label: "ごめんね" },
+        { id: "fox_sparkle", emoji: "🦊", label: "お疲れさま" }
+      ];
+
+      let stickerContent = "";
+      if (msg.stickerId) {
+        const stickerObj = STICKERS.find(s => s.id === msg.stickerId);
+        if (stickerObj) {
+          stickerContent = `
+            <div class="flex flex-col items-center p-1 select-none animate-in zoom-in duration-200">
+              <span class="text-6xl filter drop-shadow-md leading-none mb-1">${stickerObj.emoji}</span>
+              <span class="text-[10px] font-black px-2.5 py-0.5 bg-white/95 dark:bg-zinc-800/95 text-zinc-800 dark:text-zinc-100 rounded-full border border-zinc-200/50 dark:border-zinc-700/50 shadow-sm leading-none tracking-wide">${stickerObj.label}</span>
+            </div>`;
+        }
+      }
+
       const messageText = msg.text ? `<p class="whitespace-pre-wrap leading-relaxed">${msg.text}</p>` : "";
+
+      const readCount = initialReadBy.filter(id => id !== msg.senderId).length;
+      const otherUsersInRoom = activeUsersCount - 1;
+      const isReadVisible = isMe && readCount > 0;
+      const readText = isReadVisible ? ("既読" + (otherUsersInRoom > 1 ? (" " + readCount) : "")) : "";
+      const readHideClass = isReadVisible ? "" : "hidden";
+
+      const bubblePaddingClass = msg.stickerId ? "px-1 py-0.5 select-none" : "px-3.5 py-2 rounded-2xl bg-line-bubbleMe dark:bg-line-bubbleMeDark text-zinc-900 dark:text-white text-sm break-words shadow-sm";
+      const tailMeClass = msg.stickerId ? "" : "bubble-me-tail";
+
+      const bubbleOtherPaddingClass = msg.stickerId ? "px-1 py-0.5 select-none" : "px-3.5 py-2 rounded-2xl bg-line-bubbleOther dark:bg-line-bubbleOtherDark text-zinc-900 dark:text-zinc-100 text-sm break-words shadow-sm";
+      const tailOtherClass = msg.stickerId ? "" : "bubble-other-tail";
 
       if (isMe) {
         msgDiv.innerHTML = `
           <!-- 既読と時間 -->
-          <div class="flex flex-col justify-end items-end text-[9px] text-zinc-600 dark:text-zinc-400 font-bold self-end shrink-0 leading-tight select-none">
-            <span class="text-emerald-600 dark:text-emerald-400 font-extrabold select-none mb-0.5">既読</span>
+          <div class="flex flex-col justify-end items-end text-[9px] text-zinc-600 dark:text-zinc-400 font-bold self-end shrink-0 leading-tight">
+            <span class="text-emerald-600 dark:text-emerald-400 font-extrabold select-none mb-0.5 read-count-label ${readHideClass}">${readText}</span>
             <span class="opacity-80">${time}</span>
           </div>
 
           <!-- 吹き出し -->
-          <div class="bubble-me-tail max-w-[70%] z-10">
-            <div class="px-3.5 py-2 rounded-2xl rounded-tr-none bg-line-bubbleMe dark:bg-line-bubbleMeDark text-zinc-900 dark:text-white text-sm break-words shadow-sm">
+          <div class="${tailMeClass} max-w-[70%] z-10">
+            <div class="${bubblePaddingClass} rounded-tr-none">
+              ${stickerContent}
               ${messageText}
               ${mediaContent}
             </div>
@@ -522,8 +699,9 @@
             
             <div class="flex items-end gap-1.5">
               <!-- 吹き出し -->
-              <div class="bubble-other-tail z-10">
-                <div class="px-3.5 py-2 rounded-2xl rounded-tl-none bg-line-bubbleOther dark:bg-line-bubbleOtherDark text-zinc-900 dark:text-zinc-100 text-sm break-words shadow-sm">
+              <div class="${tailOtherClass} z-10">
+                <div class="${bubbleOtherPaddingClass} rounded-tl-none">
+                  ${stickerContent}
                   ${messageText}
                   ${mediaContent}
                 </div>
