@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LINE Talk - 部屋作成・接続クライアント</title>
+  <title>LINE Talk - 部屋: 123456</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -83,18 +83,11 @@
       background: rgba(0, 0, 0, 0.12);
       border-radius: 9999px;
     }
-    @keyframes bounceSubtle {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-4px); }
-    }
-    .animate-bounce-subtle {
-      animation: bounceSubtle 2s infinite ease-in-out;
-    }
   </style>
 </head>
 <body class="bg-line-bg dark:bg-line-bgDark text-zinc-900 dark:text-zinc-100 font-sans min-h-screen flex flex-col transition-colors duration-200">
   
-  <!-- 1. HEADER (トークヘッダー) -->
+  <!-- 1. HEADER (LINE Talk トークヘッダー) -->
   <header class="bg-[#1E2A3A]/90 dark:bg-zinc-950/95 backdrop-blur text-white px-4 py-3 sticky top-0 z-20 flex items-center justify-between shadow-sm">
     <div class="flex items-center gap-3">
       <button id="backBtn" class="p-1 hover:bg-white/10 rounded-full transition-colors hidden" title="設定に戻る">
@@ -102,10 +95,19 @@
       </button>
       <div>
         <div class="flex items-center gap-1.5">
-          <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" id="connectionDot"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" id="connectionDot"></span>
           <h1 class="font-bold text-base tracking-wide" id="headerTitle">LINE Talk</h1>
         </div>
-        <p class="text-[10px] text-zinc-300 font-medium">部屋ID: <span id="headerRoomId" class="font-mono font-bold bg-white/10 px-1 py-0.5 rounded">未接続</span> <span id="onlineCount" class="ml-1 opacity-90"></span></p>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 mt-0.5">
+          <p class="text-[10px] text-zinc-300 font-medium">部屋ID: <span id="headerRoomId" class="font-mono font-bold bg-white/10 px-1 py-0.5 rounded">123456</span> <span id="onlineCount" class="ml-1 opacity-90"></span></p>
+          
+          <!-- クイック別室入室/移動フォーム (お持ち帰り用) -->
+          <div id="quickRoomArea" class="hidden flex items-center gap-1 bg-white/10 px-1.5 py-0.5 rounded border border-white/10 text-[9px]">
+            <span class="text-zinc-300">🚪 別の部屋へ:</span>
+            <input type="text" id="quickRoomInput" class="bg-transparent focus:outline-none font-bold text-white placeholder-zinc-400 w-16 text-center border-b border-white/20" placeholder="ID入力">
+            <button id="quickRoomGoBtn" class="bg-line-brand text-white font-extrabold px-1 rounded hover:bg-line-brandHover transition-all">Go</button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="flex items-center gap-2">
@@ -121,74 +123,80 @@
       
       <!-- LINE公式風吹き出しロゴ -->
       <div class="flex flex-col items-center">
-        <div class="w-16 h-16 bg-line-brand text-white font-extrabold rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-emerald-100 dark:shadow-none animate-bounce">
+        <div class="w-16 h-16 bg-line-brand text-white font-extrabold rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-emerald-100 dark:shadow-none">
           💬
         </div>
         <h2 class="text-xl font-extrabold mt-4 text-zinc-800 dark:text-zinc-100">LINE Talk お持ち帰り版</h2>
-        <p class="text-[11px] text-zinc-400 mt-1 max-w-xs leading-relaxed">部屋ID、ニックネーム、アバターを決めてトークを開始しましょう！</p>
-      </div>
-
-      <!-- 部屋ID入力 -->
-      <div class="space-y-2 text-left">
-        <label class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">トークルームID (部屋を決める)</label>
-        <input type="text" id="roomInput" class="w-full py-3 px-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-line-brand/50 focus:border-line-brand focus:outline-none font-bold text-sm text-zinc-800 dark:text-zinc-100 font-mono" placeholder="例: room1234">
-        <p class="text-[10px] text-zinc-400 leading-normal">※友達と同じIDを入力すると合流できます。新しい部屋を作る場合もここに入力して下さい。</p>
+        <p class="text-[11px] text-zinc-400 mt-1 max-w-xs leading-relaxed">このHTMLファイルだけで、どこからでもトークルームに安全に直接接続して会話できます。</p>
       </div>
 
       <!-- アバター選択 -->
       <div class="space-y-2 text-left">
         <label class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">プロフィール画像 (LINEキャラクター風)</label>
-        <div class="grid grid-cols-6 gap-2" id="avatarGrid"></div>
+        <div class="grid grid-cols-6 gap-2" id="avatarGrid">
+          <!-- JSでレンダリング -->
+        </div>
+      </div>
+
+      <!-- 部屋ID入力 -->
+      <div class="space-y-2 text-left">
+        <label class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">🚪 トークルームID (部屋を決める)</label>
+        <input type="text" id="roomInput" class="w-full py-3 px-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-line-brand/50 focus:border-line-brand focus:outline-none font-bold text-sm text-zinc-800 dark:text-zinc-100" placeholder="任意の部屋ID（例: room123）を入力" value="123456">
+        <p class="text-[10px] text-zinc-400 leading-normal">※友達と同じ部屋IDを打ち込むことで一緒に会話できます。</p>
       </div>
 
       <!-- ニックネーム入力 -->
       <div class="space-y-2 text-left">
-        <label class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">表示するお名前</label>
+        <label class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">👤 表示するお名前</label>
         <input type="text" id="nicknameInput" maxlength="15" class="w-full py-3 px-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-line-brand/50 focus:border-line-brand focus:outline-none font-bold text-sm text-zinc-800 dark:text-zinc-100" placeholder="ニックネームを入力してください">
       </div>
 
       <!-- 参加ボタン -->
-      <button id="joinBtn" class="w-full py-3.5 bg-line-brand hover:bg-line-brandHover text-white font-bold rounded-xl active:scale-[0.98] transition-all text-sm shadow-md shadow-emerald-100 dark:shadow-none">
-        トークを開始する
+      <button id="joinBtn" class="w-full py-3.5 px-6 bg-line-brand hover:bg-line-brandHover active:scale-95 text-white font-extrabold rounded-2xl shadow-lg shadow-emerald-100 dark:shadow-none transition-all tracking-wide text-sm flex items-center justify-center gap-2">
+        <span>トークルームに入る</span>
+        <span>👉</span>
       </button>
     </div>
   </main>
 
-  <!-- 3. CHAT VIEW -->
-  <main id="chatView" class="hidden flex-1 flex flex-col overflow-hidden max-w-2xl w-full mx-auto relative">
+  <!-- 3. MAIN CHAT VIEW -->
+  <main id="chatView" class="flex-1 max-w-4xl w-full mx-auto flex flex-col hidden overflow-hidden relative">
     
     <!-- ドラッグ＆ドロップ用オーバーレイ -->
-    <div id="dropOverlay" class="absolute inset-0 bg-line-brand/20 dark:bg-line-brand/10 backdrop-blur-sm border-4 border-dashed border-line-brand m-2 rounded-2xl z-50 flex flex-col items-center justify-center pointer-events-none hidden opacity-0 transition-opacity duration-200">
-      <div class="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-xl flex flex-col items-center gap-3">
-        <span class="text-4xl animate-bounce">📁</span>
-        <p class="font-extrabold text-zinc-800 dark:text-zinc-100 text-sm">ここにファイルをドロップして送信</p>
-        <p class="text-[10px] text-zinc-400">画像やファイルをすばやく共有できます</p>
+    <div id="dropOverlay" class="absolute inset-0 bg-line-brand/20 dark:bg-line-brand/10 backdrop-blur-sm border-4 border-dashed border-line-brand z-50 flex flex-col items-center justify-center transition-all opacity-0 pointer-events-none">
+      <div class="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-xl flex flex-col items-center">
+        <span class="text-5xl animate-bounce">📁</span>
+        <p class="mt-2 text-sm font-bold text-zinc-700 dark:text-zinc-200">ここにドロップして画像を送信</p>
       </div>
     </div>
 
     <!-- メッセージ表示エリア -->
-    <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"></div>
-
-    <!-- ファイルアップロードインジケーター -->
-    <div id="uploadingIndicator" class="px-4 py-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border-t border-zinc-100 dark:border-zinc-800 flex items-center gap-2 text-xs text-zinc-500 hidden">
-      <div class="w-3.5 h-3.5 border-2 border-line-brand border-t-transparent rounded-full animate-spin"></div>
-      <span>ファイルをアップロード中...</span>
+    <div id="messagesContainer" class="flex-1 overflow-y-auto px-4 py-6 space-y-4">
+      <!-- メッセージはJSで動的に挿入されます -->
     </div>
 
-    <!-- フッター入力・スタンプエリア -->
-    <footer class="bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-900 p-2 md:p-3 flex items-end gap-2 sticky bottom-0 z-10 relative">
-      
-      <!-- スタンプ選択パネル -->
-      <div id="stickerPicker" class="absolute bottom-full mb-2 left-2 z-50 w-72 p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl transition-all hidden scale-95 opacity-0 origin-bottom-left">
-        <div class="flex justify-between items-center mb-2 pb-1.5 border-b border-zinc-100 dark:border-zinc-800">
-          <span class="text-xs font-extrabold text-zinc-700 dark:text-zinc-300">LINEスタンプ風絵文字</span>
-          <button type="button" id="closeStickerBtn" class="p-1 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-          </button>
-        </div>
-        <div class="grid grid-cols-5 gap-2 max-h-48 overflow-y-auto pr-1" id="stickerGrid"></div>
-      </div>
+    <!-- アップロード中のインジケータ -->
+    <div id="uploadingIndicator" class="hidden px-4 py-2 bg-yellow-50 dark:bg-yellow-950/40 border-t border-yellow-100 dark:border-yellow-900/40 text-xs font-bold text-yellow-600 dark:text-yellow-400 flex items-center gap-2 animate-pulse">
+      <span class="w-2 h-2 rounded-full bg-yellow-500"></span>
+      画像を送信中...
+    </div>
 
+    <!-- スタンプピッカー（フローティング） -->
+    <div id="stickerPicker" class="absolute bottom-20 left-4 right-4 bg-white/95 dark:bg-zinc-900/95 backdrop-blur border border-zinc-200 dark:border-zinc-800 rounded-3xl p-4 shadow-2xl z-40 hidden transform scale-95 opacity-0 transition-all duration-200">
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="text-xs font-extrabold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+          <span>🐻</span> スタンプを選択
+        </h4>
+        <button id="closeStickerBtn" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-sm font-bold p-1">✕</button>
+      </div>
+      <div class="grid grid-cols-5 gap-2 max-h-48 overflow-y-auto" id="stickerGrid">
+        <!-- JSでスタンプ挿入 -->
+      </div>
+    </div>
+
+    <!-- 下部メッセージ入力欄 -->
+    <footer class="bg-white dark:bg-zinc-950 border-t border-zinc-200/80 dark:border-zinc-800/80 px-4 py-3 flex items-end gap-2 sticky bottom-0 z-30">
+      
       <!-- ファイル添付ボタン -->
       <button id="fileBtn" class="p-2.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-line-brand transition-colors flex-shrink-0" title="画像・ファイルを送信">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
@@ -213,33 +221,29 @@
   </main>
 
   <script>
-    // 接続先WebSocketサーバー
-    const WS_SERVER = "wss://ais-dev-zgjvqvivh4qdpuw4v2hl7b-947807142449.asia-east1.run.app";
-    let ROOM_ID = "";
+    let ROOM_ID = "123456";
+    const WS_SERVER = "wss://ais-pre-zgjvqvivh4qdpuw4v2hl7b-947807142449.asia-east1.run.app";
     let ws = null;
     let myName = "";
-    let myId = "";
-    let activeUsersCount = 1;
     let selectedAvatar = "🐻";
-    
-    const avatars = ["🐻", "🐰", "🐥", "🐸", "🐱", "🐼", "🦁", "🐵", "🦊", "🐨", "🐧", "🦄"];
 
+    const AVATARS = ["🐻", "🐰", "🐥", "🐱", "🐼", "🐸", "🐨", "🦁", "🐵", "🦊", "🐷", "🐹"];
+
+    // UI要素
     const setupView = document.getElementById("setupView");
     const chatView = document.getElementById("chatView");
-    const roomInput = document.getElementById("roomInput");
-    const nicknameInput = document.getElementById("nicknameInput");
-    const joinBtn = document.getElementById("joinBtn");
     const backBtn = document.getElementById("backBtn");
+    const joinBtn = document.getElementById("joinBtn");
+    const nicknameInput = document.getElementById("nicknameInput");
+    const avatarGrid = document.getElementById("avatarGrid");
+    const messagesContainer = document.getElementById("messagesContainer");
     const messageInput = document.getElementById("messageInput");
     const sendBtn = document.getElementById("sendBtn");
-    const messagesContainer = document.getElementById("messagesContainer");
-    const themeToggleBtn = document.getElementById("themeToggleBtn");
     const connectionDot = document.getElementById("connectionDot");
     const headerTitle = document.getElementById("headerTitle");
     const headerRoomId = document.getElementById("headerRoomId");
     const onlineCount = document.getElementById("onlineCount");
-    const avatarGrid = document.getElementById("avatarGrid");
-    
+    const themeToggleBtn = document.getElementById("themeToggleBtn");
     const fileBtn = document.getElementById("fileBtn");
     const fileInput = document.getElementById("fileInput");
     const uploadingIndicator = document.getElementById("uploadingIndicator");
@@ -252,23 +256,21 @@
 
     // 保存データのロード
     const savedName = localStorage.getItem("line_saved_name") || "";
-    const savedAvatar = localStorage.getItem("line_saved_avatar") || "🐼";
-    const savedRoomId = localStorage.getItem("line_saved_room_id") || Math.floor(100000 + Math.random() * 900000).toString();
+    if (savedName) nicknameInput.value = savedName;
 
-    nicknameInput.value = savedName;
-    selectedAvatar = savedAvatar;
-    roomInput.value = savedRoomId;
+    const savedAvatar = localStorage.getItem("line_saved_avatar") || "🐻";
+    if (AVATARS.includes(savedAvatar)) selectedAvatar = savedAvatar;
 
-    // アバターグリッド表示
+    // アバターグリッド構築
     function renderAvatarGrid() {
       avatarGrid.innerHTML = "";
-      avatars.forEach(emoji => {
+      AVATARS.forEach(av => {
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = `py-2 text-2xl rounded-xl transition-all active:scale-95 border-2 ${selectedAvatar === emoji ? 'bg-zinc-100 dark:bg-zinc-800 border-line-brand shadow-sm scale-105' : 'border-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800/40'}`;
-        btn.innerText = emoji;
+        btn.className = `w-10 h-10 rounded-full text-xl flex items-center justify-center border-2 transition-all hover:scale-110 active:scale-95 ${av === selectedAvatar ? 'border-line-brand bg-emerald-50 dark:bg-emerald-950/20' : 'border-zinc-200 dark:border-zinc-800'}`;
+        btn.innerText = av;
         btn.addEventListener("click", () => {
-          selectedAvatar = emoji;
+          selectedAvatar = av;
           renderAvatarGrid();
         });
         avatarGrid.appendChild(btn);
@@ -276,7 +278,7 @@
     }
     renderAvatarGrid();
 
-    // スタンプデータ
+    // スタンプグリッド構築
     const STICKERS_LIST = [
       { id: "bear_ok", emoji: "🐻", label: "OK!" },
       { id: "bunny_love", emoji: "🐰", label: "ありがとう" },
@@ -297,7 +299,7 @@
         btn.type = "button";
         btn.className = "flex flex-col items-center justify-center p-2 rounded-xl border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all active:scale-95";
         btn.title = st.label;
-        btn.innerHTML = `<span class="text-3xl leading-none mb-1 select-none">${st.emoji}</span><span class="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 truncate w-full text-center leading-none">${st.label}</span>`;
+        btn.innerHTML = '<span class="text-3xl leading-none mb-1 select-none">' + st.emoji + '</span><span class="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 truncate w-full text-center leading-none">' + st.label + '</span>';
         btn.addEventListener("click", () => {
           sendSticker(st.id);
         });
@@ -336,48 +338,73 @@
       hideStickerPicker();
     }
 
-    // ダークモード復元・切替
+    // ダークモード・テーマの復元
     const isDarkSaved = localStorage.getItem("line_dark_theme") === "true";
     if (isDarkSaved) {
       document.documentElement.classList.add("dark");
     }
 
     themeToggleBtn.addEventListener("click", () => {
-      document.documentElement.classList.toggle("dark");
-      localStorage.setItem("line_dark_theme", document.documentElement.classList.contains("dark"));
+      const isDark = document.documentElement.classList.toggle("dark");
+      localStorage.setItem("line_dark_theme", isDark ? "true" : "false");
     });
 
-    // ログイン処理（トークルーム接続）
-    joinBtn.addEventListener("click", () => {
-      const roomVal = roomInput.value.trim().replace(/\s+/g, "");
-      if (!roomVal) {
-        alert("トークルームIDを入力してください。");
-        return;
-      }
-      ROOM_ID = roomVal;
-
-      myName = nicknameInput.value.trim();
-      if (!myName) {
-        alert("お名前（ニックネーム）を入力してください。");
-        return;
-      }
-
-      localStorage.setItem("line_saved_name", myName);
-      localStorage.setItem("line_saved_avatar", selectedAvatar);
-      localStorage.setItem("line_saved_room_id", ROOM_ID);
-
-      headerRoomId.innerText = ROOM_ID;
-      connectWebSocket();
-    });
-
+    // 接続の切断
     backBtn.addEventListener("click", () => {
-      if (ws) ws.close();
+      if (ws) {
+        ws.close();
+      }
       chatView.classList.add("hidden");
       backBtn.classList.add("hidden");
+      const quickRoomArea = document.getElementById("quickRoomArea");
+      if (quickRoomArea) {
+        quickRoomArea.classList.add("hidden");
+      }
       setupView.classList.remove("hidden");
       headerTitle.innerText = "LINE Talk";
       onlineCount.innerText = "";
     });
+
+    // クイック別の部屋へ移動（お持ち帰り用）
+    const quickRoomArea = document.getElementById("quickRoomArea");
+    const quickRoomInput = document.getElementById("quickRoomInput");
+    const quickRoomGoBtn = document.getElementById("quickRoomGoBtn");
+
+    if (quickRoomGoBtn && quickRoomInput) {
+      quickRoomGoBtn.addEventListener("click", () => {
+        const val = quickRoomInput.value.trim().replace(/\s+/g, "");
+        if (!val) {
+          alert("移動先の部屋IDを入力してください。");
+          return;
+        }
+        ROOM_ID = val;
+        
+        const headerRoomId = document.getElementById("headerRoomId");
+        if (headerRoomId) {
+          headerRoomId.innerText = ROOM_ID;
+        }
+        
+        const roomInput = document.getElementById("roomInput");
+        if (roomInput) {
+          roomInput.value = ROOM_ID;
+        }
+
+        quickRoomInput.value = "";
+        
+        // WebSocketを切断・再接続
+        if (ws) {
+          ws.close();
+        }
+        connectWebSocket();
+      });
+
+      quickRoomInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          quickRoomGoBtn.click();
+        }
+      });
+    }
 
     // テキストエリア自動伸縮とEnter送信
     messageInput.addEventListener("input", function() {
@@ -394,116 +421,59 @@
 
     sendBtn.addEventListener("click", sendMessage);
 
-    function sendMessage() {
-      const text = messageInput.value.trim();
-      if (!text || !ws) return;
-
-      ws.send(JSON.stringify({
-        type: "message",
-        text: text
-      }));
-      messageInput.value = "";
-      messageInput.style.height = "auto";
-    }
-
-    // ファイル送信 (Base64)
-    fileBtn.addEventListener("click", () => fileInput.click());
-    fileInput.addEventListener("change", (e) => {
-      if (e.target.files && e.target.files[0]) {
-        uploadFile(e.target.files[0]);
+    // 参加処理
+    joinBtn.addEventListener("click", () => {
+      const roomInputVal = document.getElementById("roomInput").value.trim().replace(/\s+/g, "");
+      if (!roomInputVal) {
+        alert("部屋IDを入力してください。");
+        return;
       }
-    });
+      ROOM_ID = roomInputVal;
 
-    function uploadFile(file) {
-      if (!ws) return;
-      uploadingIndicator.classList.remove("hidden");
-      const reader = new FileReader();
-      
-      let fileType = "file";
-      if (file.type.startsWith("image/")) fileType = "image";
-      else if (file.type.startsWith("video/")) fileType = "video";
-
-      reader.onload = (e) => {
-        ws.send(JSON.stringify({
-          type: "message",
-          text: "",
-          fileData: e.target.result,
-          fileName: file.name,
-          fileType: fileType
-        }));
-        uploadingIndicator.classList.add("hidden");
-        fileInput.value = "";
-      };
-      reader.onerror = () => {
-        alert("ファイルの読み込みに失敗しました。");
-        uploadingIndicator.classList.add("hidden");
-      };
-      reader.readAsDataURL(file);
-    }
-
-    // ドラッグ＆ドロップ
-    window.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      dropOverlay.classList.remove("hidden");
-      setTimeout(() => dropOverlay.classList.remove("opacity-0"), 10);
-    });
-
-    window.addEventListener("dragleave", (e) => {
-      e.preventDefault();
-      if (e.relatedTarget === null) {
-        dropOverlay.classList.add("opacity-0");
-        setTimeout(() => dropOverlay.classList.add("hidden"), 200);
+      myName = nicknameInput.value.trim();
+      if (!myName) {
+        alert("お名前（ニックネーム）を入力してください。");
+        return;
       }
-    });
+      localStorage.setItem("line_saved_name", myName);
+      localStorage.setItem("line_saved_avatar", selectedAvatar);
 
-    window.addEventListener("drop", (e) => {
-      e.preventDefault();
-      dropOverlay.classList.add("opacity-0");
-      setTimeout(() => dropOverlay.classList.add("hidden"), 200);
-
-      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-        uploadFile(e.dataTransfer.files[0]);
+      const headerRoomId = document.getElementById("headerRoomId");
+      if (headerRoomId) {
+        headerRoomId.innerText = ROOM_ID;
       }
+
+      connectWebSocket();
     });
 
-    function resetJoinButton() {
-      joinBtn.disabled = false;
-      joinBtn.innerText = "トークを開始する";
-    }
-
-    // WebSocket接続処理
+    // WebSocket接続
     function connectWebSocket() {
-      connectionDot.classList.remove("bg-emerald-500", "bg-rose-500");
-      connectionDot.classList.add("bg-amber-500");
+      updateConnectionStatus(false, "接続中...");
       
-      joinBtn.disabled = true;
-      joinBtn.innerText = "接続中...";
-      
-      let connectTimeout = setTimeout(() => {
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-          alert("サーバー接続に失敗しました。しばらく時間を置いてお試しください。");
-          resetJoinButton();
-          if (ws) ws.close();
-        }
-      }, 10000);
+      if (ws) {
+        ws.close();
+      }
 
       ws = new WebSocket(WS_SERVER);
 
       ws.onopen = () => {
-        clearTimeout(connectTimeout);
-        connectionDot.classList.remove("bg-amber-500");
-        connectionDot.classList.add("bg-emerald-500");
+        updateConnectionStatus(true, "接続済み");
         
+        // 部屋に参加
         ws.send(JSON.stringify({
           type: "join",
           roomId: ROOM_ID,
           userName: myName,
           avatar: selectedAvatar
         }));
-        
+
         setupView.classList.add("hidden");
         chatView.classList.remove("hidden");
         backBtn.classList.remove("hidden");
+        const quickRoomArea = document.getElementById("quickRoomArea");
+        if (quickRoomArea) {
+          quickRoomArea.classList.remove("hidden");
+        }
         headerTitle.innerText = "トークルーム";
         resetJoinButton();
       };
@@ -512,180 +482,209 @@
         try {
           const data = JSON.parse(event.data);
           
-          if (data.type === "init") {
-            myId = data.userId;
+          if (data.type === "presence") {
+            onlineCount.innerText = " (オンライン: " + data.count + "人)";
+            return;
+          }
+
+          if (data.type === "history") {
             messagesContainer.innerHTML = "";
-            activeUsersCount = data.users.length;
-            updateUserCount(activeUsersCount);
             data.messages.forEach(msg => {
               appendMessage(msg);
             });
-            sendReadReceipts(data.messages);
-          } else if (data.type === "message") {
-            appendMessage(data.message);
-            if (data.message.senderId !== myId) {
-              sendReadReceipts([data.message]);
-            }
-          } else if (data.type === "user_joined") {
-            appendSystemMessage("📢 " + data.user.avatar + " " + data.user.userName + "さんが参加しました");
-            activeUsersCount++;
-            updateUserCount(activeUsersCount);
-          } else if (data.type === "user_left") {
-            appendSystemMessage("📢 ユーザーが退室しました");
-            if (activeUsersCount > 1) activeUsersCount--;
-            updateUserCount(activeUsersCount);
-          } else if (data.type === "read_update") {
-            const { messageIds, userId } = data;
-            messageIds.forEach(id => {
-              const msgEl = document.getElementById("msg_" + id);
-              if (msgEl) {
-                let readBy = JSON.parse(msgEl.getAttribute("data-read-by") || "[]");
-                if (!readBy.includes(userId)) {
-                  readBy.push(userId);
-                  msgEl.setAttribute("data-read-by", JSON.stringify(readBy));
-                  const countLabel = msgEl.querySelector(".read-count-label");
-                  if (countLabel) {
-                    const readCount = readBy.filter(uId => uId !== msgEl.getAttribute("data-sender-id")).length;
-                    if (readCount > 0) {
-                      countLabel.innerText = "既読" + (activeUsersCount > 2 ? (" " + readCount) : "");
-                      countLabel.classList.remove("hidden");
-                    }
-                  }
-                }
-              }
-            });
+            scrollToBottom();
+            return;
           }
-        } catch(e) {
+
+          if (data.type === "message") {
+            appendMessage(data);
+            scrollToBottom();
+          }
+        } catch (e) {
           console.error(e);
         }
       };
 
       ws.onclose = () => {
-        connectionDot.classList.remove("bg-emerald-500", "bg-amber-500");
-        connectionDot.classList.add("bg-rose-500");
-        appendSystemMessage("❌ サーバーとの接続が切断されました。再入室するか、リロードしてください。");
+        updateConnectionStatus(false, "オフライン");
+      };
+
+      ws.onerror = (err) => {
+        console.error(err);
+        updateConnectionStatus(false, "エラー（再試行中）");
       };
     }
 
-    function sendReadReceipts(msgs) {
-      if (!ws || ws.readyState !== WebSocket.OPEN || !myId) return;
-      const unreadIds = msgs
-        .filter(m => m.senderId !== "system" && m.senderId !== myId && (!m.readBy || !m.readBy.includes(myId)))
-        .map(m => m.id);
-      
-      if (unreadIds.length > 0) {
-        ws.send(JSON.stringify({
-          type: "read",
-          messageIds: unreadIds
-        }));
-      }
-    }
-
-    function updateUserCount(count) {
-      onlineCount.innerText = " (メンバー: " + count + "人)";
-    }
-
-    function appendSystemMessage(text) {
-      const div = document.createElement("div");
-      div.className = "flex justify-center my-2 select-none animate-in fade-in duration-200";
-      div.innerHTML = `<span class="bg-black/10 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-semibold leading-none">${text}</span>`;
-      messagesContainer.appendChild(div);
-      scrollToBottom();
-    }
-
-    function appendMessage(msg) {
-      if (msg.senderId === "system") {
-        appendSystemMessage(msg.text);
-        return;
-      }
-
-      const isMe = msg.senderId === myId;
-      const msgDiv = document.createElement("div");
-      msgDiv.id = "msg_" + msg.id;
-      msgDiv.setAttribute("data-sender-id", msg.senderId);
-      const initialReadBy = msg.readBy || [msg.senderId];
-      msgDiv.setAttribute("data-read-by", JSON.stringify(initialReadBy));
-
-      msgDiv.className = "flex items-start gap-2 " + (isMe ? "flex-row-reverse" : "flex-row") + " animate-in fade-in duration-200";
-      
-      const time = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
-      let mediaContent = "";
-      if (msg.fileData) {
-        if (msg.fileType === "image") {
-          mediaContent = `<div class="mt-1 rounded-xl overflow-hidden max-w-xs border border-zinc-200/50 dark:border-zinc-800 shadow-sm"><img src="${msg.fileData}" alt="Image" class="w-full h-auto cursor-pointer object-cover max-h-60" onclick="window.open('${msg.fileData}', '_blank')"></div>`;
-        } else if (msg.fileType === "video") {
-          mediaContent = `<div class="mt-1 rounded-xl overflow-hidden max-w-xs border border-zinc-200/50 dark:border-zinc-800 shadow-sm"><video src="${msg.fileData}" controls class="w-full h-auto max-h-60"></video></div>`;
-        } else {
-          mediaContent = `<div class="mt-1"><a href="${msg.fileData}" download="${msg.fileName}" class="flex items-center gap-2 p-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700/80 rounded-xl border border-zinc-200/50 dark:border-zinc-700 transition-colors text-xs font-extrabold max-w-xs"><span class="text-2xl">📄</span><div class="truncate text-left flex-1"><p class="text-zinc-800 dark:text-zinc-100 truncate">${msg.fileName}</p><p class="text-[9px] text-zinc-400 dark:text-zinc-500 uppercase mt-0.5">ダウンロード</p></div></a></div>`;
-        }
-      }
-
-      let stickerContent = "";
-      if (msg.stickerId) {
-        const stickerObj = STICKERS_LIST.find(s => s.id === msg.stickerId);
-        if (stickerObj) {
-          stickerContent = `
-            <div class="flex flex-col items-center p-1 select-none animate-in zoom-in duration-200">
-              <span class="text-6xl filter drop-shadow-md leading-none mb-1 animate-bounce-subtle">${stickerObj.emoji}</span>
-              <span class="text-[10px] font-black px-2.5 py-0.5 bg-white/95 dark:bg-zinc-800/95 text-zinc-800 dark:text-zinc-100 rounded-full border border-zinc-200/50 dark:border-zinc-700/50 shadow-sm leading-none tracking-wide">${stickerObj.label}</span>
-            </div>`;
-        }
-      }
-
-      const messageText = msg.text ? `<p class="whitespace-pre-wrap leading-relaxed">${msg.text}</p>` : "";
-
-      const readCount = initialReadBy.filter(id => id !== msg.senderId).length;
-      const otherUsersInRoom = activeUsersCount - 1;
-      const isReadVisible = isMe && readCount > 0;
-      const readText = isReadVisible ? ("既読" + (otherUsersInRoom > 1 ? (" " + readCount) : "")) : "";
-      const readHideClass = isReadVisible ? "" : "hidden";
-
-      const bubblePaddingClass = msg.stickerId ? "px-1 py-0.5 select-none" : "px-3.5 py-2 rounded-2xl bg-line-bubbleMe dark:bg-line-bubbleMeDark text-zinc-900 dark:text-white text-sm break-words shadow-sm";
-      const tailMeClass = msg.stickerId ? "" : "bubble-me-tail";
-
-      const bubbleOtherPaddingClass = msg.stickerId ? "px-1 py-0.5 select-none" : "px-3.5 py-2 rounded-2xl bg-line-bubbleOther dark:bg-line-bubbleOtherDark text-zinc-900 dark:text-zinc-100 text-sm break-words shadow-sm";
-      const tailOtherClass = msg.stickerId ? "" : "bubble-other-tail";
-
-      if (isMe) {
-        msgDiv.innerHTML = `
-          <div class="flex flex-col justify-end items-end text-[10px] text-zinc-500 dark:text-zinc-400 select-none flex-shrink-0 min-w-[45px] pb-0.5">
-            <span class="text-[#06C755] dark:text-emerald-400 font-extrabold select-none mb-0.5 read-count-label ${readHideClass}">${readText}</span>
-            <span class="opacity-80">${time}</span>
-          </div>
-          <div class="${tailMeClass} max-w-[70%] z-10">
-            <div class="${bubblePaddingClass} rounded-tr-none">
-              ${stickerContent}
-              ${messageText}
-              ${mediaContent}
-            </div>
-          </div>`;
+    function updateConnectionStatus(connected, text) {
+      if (connected) {
+        connectionDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
       } else {
-        msgDiv.innerHTML = `
-          <div class="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200/50 dark:border-zinc-700/80 flex items-center justify-center text-2xl shadow-sm select-none flex-shrink-0" title="${msg.senderName}">
-            ${msg.senderAvatar || '🐻'}
-          </div>
-          <div class="flex flex-col max-w-[70%]">
-            <span class="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1 mb-1 select-none">${msg.senderName}</span>
-            <div class="flex items-end gap-1.5">
-              <div class="${tailOtherClass} z-10">
-                <div class="${bubbleOtherPaddingClass} rounded-tl-none">
-                  ${stickerContent}
-                  ${messageText}
-                  ${mediaContent}
-                </div>
-              </div>
-              <span class="text-[9px] text-zinc-500 dark:text-zinc-400 select-none pb-0.5 flex-shrink-0 opacity-80">${time}</span>
-            </div>
-          </div>`;
+        connectionDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse";
       }
+    }
+
+    function resetJoinButton() {
+      joinBtn.disabled = false;
+      joinBtn.innerText = "トークルームに入る";
+    }
+
+    // メッセージの送信
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+      ws.send(JSON.stringify({
+        type: "message",
+        text: text
+      }));
+
+      messageInput.value = "";
+      messageInput.style.height = "auto";
+    }
+
+    // メッセージ追加
+    function appendMessage(msg) {
+      const isMe = msg.userName === myName && msg.avatar === selectedAvatar;
+      const dateStr = msg.timestamp ? formatTime(msg.timestamp) : formatTime(new Date().toISOString());
+
+      const msgDiv = document.createElement("div");
+      msgDiv.className = `flex gap-2.5 max-w-[85%] ${isMe ? 'ml-auto flex-row-reverse' : 'mr-auto'}`;
+
+      // アバター表示
+      const avatarDiv = document.createElement("div");
+      avatarDiv.className = "w-9 h-9 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200/50 dark:border-zinc-700/50 flex items-center justify-center text-lg select-none shadow-sm flex-shrink-0";
+      avatarDiv.innerText = msg.avatar || "👤";
+
+      const contentCol = document.createElement("div");
+      contentCol.className = "flex flex-col gap-1";
+
+      // ユーザー名
+      if (!isMe) {
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "text-[11px] font-extrabold text-zinc-600 dark:text-zinc-400 pl-1";
+        nameSpan.innerText = msg.userName;
+        contentCol.appendChild(nameSpan);
+      }
+
+      // バブル本体
+      const bubbleWrapper = document.createElement("div");
+      bubbleWrapper.className = "flex items-end gap-1.5";
+      if (isMe) bubbleWrapper.className += " flex-row-reverse";
+
+      const bubble = document.createElement("div");
+      
+      // スタンプメッセージか通常のメッセージかで出し分け
+      if (msg.stickerId) {
+        bubble.className = "relative p-1 max-w-sm rounded-2xl select-none";
+        const stickerMeta = STICKERS_LIST.find(s => s.id === msg.stickerId);
+        if (stickerMeta) {
+          bubble.innerHTML = '<div class="flex flex-col items-center"><span class="text-7xl leading-none py-2">' + stickerMeta.emoji + '</span><span class="text-[10px] font-bold text-zinc-500/80 dark:text-zinc-400 bg-white/80 dark:bg-zinc-800/80 border border-zinc-200/30 dark:border-zinc-700/30 px-2.5 py-0.5 rounded-full shadow-sm">' + stickerMeta.label + '</span></div>';
+        } else {
+          bubble.innerHTML = '<span class="text-3xl">🐻</span>';
+        }
+      } else if (msg.fileUrl) {
+        // 画像かその他ファイルか
+        const isImg = msg.fileUrl.match(/\.(jpeg|jpg|gif|png|webp)/i);
+        if (isImg) {
+          bubble.className = "relative rounded-2xl overflow-hidden max-w-xs border border-zinc-200 dark:border-zinc-800 shadow-md bg-white dark:bg-zinc-900";
+          bubble.innerHTML = '<a href="' + msg.fileUrl + '" target="_blank"><img src="' + msg.fileUrl + '" class="max-w-full h-auto object-cover max-h-60 hover:opacity-95 transition-opacity" /></a>';
+        } else {
+          bubble.className = "relative p-3.5 rounded-2xl max-w-sm text-sm font-semibold shadow-sm bubble-other-tail flex items-center gap-2 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200";
+          bubble.innerHTML = '📁 <a href="' + msg.fileUrl + '" target="_blank" class="underline text-indigo-500 hover:text-indigo-600 truncate max-w-[180px] font-bold">' + (msg.text || "添付ファイル") + '</a>';
+        }
+      } else {
+        // 通常のテキスト
+        if (isMe) {
+          bubble.className = "relative p-3 rounded-2xl max-w-sm text-sm font-semibold shadow-sm text-zinc-900 dark:text-white bg-line-brand dark:bg-line-brandHover text-white bubble-me-tail";
+        } else {
+          bubble.className = "relative p-3 rounded-2xl max-w-sm text-sm font-semibold shadow-sm text-zinc-800 dark:text-zinc-100 bg-white dark:bg-zinc-800 bubble-other-tail";
+        }
+        bubble.innerText = msg.text;
+      }
+
+      const timeSpan = document.createElement("span");
+      timeSpan.className = "text-[9px] text-zinc-500/80 dark:text-zinc-400 font-bold tracking-tight mb-0.5 select-none";
+      timeSpan.innerText = dateStr;
+
+      bubbleWrapper.appendChild(bubble);
+      bubbleWrapper.appendChild(timeSpan);
+      contentCol.appendChild(bubbleWrapper);
+
+      msgDiv.appendChild(avatarDiv);
+      msgDiv.appendChild(contentCol);
 
       messagesContainer.appendChild(msgDiv);
-      scrollToBottom();
+    }
+
+    function formatTime(isoStr) {
+      try {
+        const d = new Date(isoStr);
+        return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+      } catch (e) {
+        return "";
+      }
     }
 
     function scrollToBottom() {
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // ドラッグ＆ドロップファイル送信対応
+    window.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropOverlay.classList.remove("opacity-0", "pointer-events-none");
+    });
+
+    dropOverlay.addEventListener("dragleave", () => {
+      dropOverlay.classList.add("opacity-0", "pointer-events-none");
+    });
+
+    window.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropOverlay.classList.add("opacity-0", "pointer-events-none");
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        uploadFile(files[0]);
+      }
+    });
+
+    fileBtn.addEventListener("click", () => {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener("change", (e) => {
+      const files = e.target.files;
+      if (files.length > 0) {
+        uploadFile(files[0]);
+      }
+    });
+
+    // ファイルアップロード擬似処理（お持ち帰り版はBASE64埋め込みで本番サーバーへ直接送信）
+    function uploadFile(file) {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+      const reader = new FileReader();
+      uploadingIndicator.classList.remove("hidden");
+
+      reader.onload = function(event) {
+        const base64Data = event.target.result;
+        
+        // サーバーへファイルデータ（BASE64）を送信
+        ws.send(JSON.stringify({
+          type: "file",
+          fileName: file.name,
+          fileData: base64Data
+        }));
+
+        uploadingIndicator.classList.add("hidden");
+      };
+
+      reader.onerror = function() {
+        alert("ファイルの読み込みに失敗しました。");
+        uploadingIndicator.classList.add("hidden");
+      };
+
+      reader.readAsDataURL(file);
     }
   </script>
 </body>
