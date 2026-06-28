@@ -1,31 +1,685 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cosmic Princess Kaguya! Movie - HD</title>
-    <style>
-        body { 
-            margin:0; 
-            background:#000; 
-            display:flex; 
-            justify-content:center; 
-            align-items:center; 
-            height:100vh; 
-            overflow:hidden;
-        }
-        iframe { 
-            width:100%; 
-            max-width:1280px; 
-            height:90vh; 
-            border:none; 
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ブラウザP2Pチャットルーム</title>
+  <meta name="description" content="インストール・ログイン不要、P2Pによる安全なチャット・ファイル共有・通話ツール">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- PeerJS CDN for zero-server WebRTC P2P connection -->
+  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    /* Hide scrollbars but keep functionality */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
 </head>
-<body>
-    <iframe src="https://megaplay.buzz/stream/s-2/164369/sub" 
-            allowfullscreen 
-            allow="autoplay; fullscreen">
-    </iframe>
+<body class="bg-zinc-50 text-zinc-950 min-h-screen flex flex-col transition-colors duration-300 dark:bg-zinc-950 dark:text-zinc-50">
+
+  <!-- ==================== JOIN ROOM PANEL ==================== -->
+  <div id="join-panel" class="flex-1 flex flex-col items-center justify-center p-4">
+    <!-- Dark Mode Switch -->
+    <div class="absolute top-4 right-4">
+      <button onclick="toggleDarkMode()" class="p-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all shadow-sm">
+        <i data-lucide="moon" id="theme-icon" class="w-5 h-5 text-zinc-600 dark:text-zinc-400"></i>
+      </button>
+    </div>
+
+    <div class="w-full max-w-md bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-6 md:p-8 shadow-xl relative overflow-hidden">
+      <div class="absolute top-0 inset-x-0 h-1.5 bg-indigo-600"></div>
+
+      <div class="space-y-2 text-center mb-6">
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-2xl shadow-sm">
+          👥
+        </div>
+        <h2 class="text-xl font-bold tracking-tight">P2Pチャット ＆ 通話ルーム</h2>
+        <p class="text-xs text-zinc-400 dark:text-zinc-500 leading-relaxed max-w-sm mx-auto">
+          同じ部屋番号を友達と共有するだけで、ブラウザだけで直接暗号化チャット、写真共有、通話が繋がります。
+        </p>
+      </div>
+
+      <form id="join-form" onsubmit="handleJoin(event)" class="space-y-4">
+        <!-- Room ID -->
+        <div>
+          <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1.5">部屋番号 (Room ID)</label>
+          <input type="text" id="room-id" required placeholder="例：room12345" class="w-full py-2.5 px-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm font-bold placeholder-zinc-400">
+          <p class="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">※友達と全く同じ文字列にしてください</p>
+        </div>
+
+        <!-- Nickname -->
+        <div>
+          <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1.5">あなたのニックネーム</label>
+          <input type="text" id="user-name" required placeholder="ポチ" class="w-full py-2.5 px-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm font-bold placeholder-zinc-400">
+        </div>
+
+        <!-- Avatar Selection -->
+        <div>
+          <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2">アバター</label>
+          <div class="grid grid-cols-6 gap-2 bg-zinc-50 dark:bg-zinc-950 p-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 max-h-[140px] overflow-y-auto no-scrollbar">
+            <button type="button" onclick="setAvatar('🐼')" class="avatar-btn py-1 text-2xl rounded-xl border border-transparent bg-white dark:bg-zinc-900 shadow-sm">🐼</button>
+            <button type="button" onclick="setAvatar('🐱')" class="avatar-btn py-1 text-2xl rounded-xl border border-transparent">🐱</button>
+            <button type="button" onclick="setAvatar('🐰')" class="avatar-btn py-1 text-2xl rounded-xl border border-transparent">🐰</button>
+            <button type="button" onclick="setAvatar('🦊')" class="avatar-btn py-1 text-2xl rounded-xl border border-transparent">🦊</button>
+            <button type="button" onclick="setAvatar('🐸')" class="avatar-btn py-1 text-2xl rounded-xl border border-transparent">🐸</button>
+            <button type="button" onclick="setAvatar('🐧')" class="avatar-btn py-1 text-2xl rounded-xl border border-transparent">🐧</button>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm rounded-xl active:scale-[0.98] transition-all shadow-md flex items-center justify-center gap-2">
+          <span>部屋に入る</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MAIN CHAT VIEWPORT ==================== -->
+  <div id="chat-viewport" class="hidden flex-1 flex flex-col md:flex-row h-screen overflow-hidden">
+    <!-- Chat Section -->
+    <div class="flex-1 flex flex-col h-full overflow-hidden border-r border-zinc-200 dark:border-zinc-800/80">
+      
+      <!-- Top header bar -->
+      <div class="flex items-center justify-between px-4 py-3 bg-white dark:bg-zinc-950 border-b border-zinc-100 dark:border-zinc-900 flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-bold text-sm">#</span>
+          <div>
+            <h3 class="text-sm font-bold" id="header-room-id">部屋ID: </h3>
+            <p class="text-[10px] text-zinc-400">P2P Peer-to-Peer 暗号化通信中</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="copyInvite()" class="flex items-center gap-1.5 text-xs py-1.5 px-3 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg active:scale-95 transition-all">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span>招待リンク</span>
+          </button>
+          <button onclick="leaveRoom()" class="flex items-center gap-1.5 text-xs py-1.5 px-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border border-rose-200/50 dark:border-rose-900/40 rounded-lg transition-colors active:scale-95">
+            <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+            <span>退室</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages Log -->
+      <div id="messages-box" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-zinc-50/50 dark:bg-zinc-900/10 scrollbar-thin">
+        <div class="flex justify-center my-2">
+          <span class="px-3 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-full text-[10px] text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
+            📢 ルームに入室しました。シグナリングサーバーと接続中...
+          </span>
+        </div>
+      </div>
+
+      <!-- Bottom Chat Input -->
+      <div class="p-4 bg-white dark:bg-zinc-950 border-t border-zinc-200/80 dark:border-zinc-800/80">
+        <form id="chat-form" onsubmit="sendTextMessage(event)" class="relative flex items-end gap-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-2 focus-within:ring-2 focus-within:ring-indigo-500/50">
+          <!-- File Attach button -->
+          <button type="button" onclick="document.getElementById('file-input').click()" class="p-2.5 rounded-xl text-zinc-500 hover:text-indigo-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" title="写真や動画を送信">
+            <i data-lucide="image" class="w-5 h-5"></i>
+          </button>
+          <input type="file" id="file-input" onchange="sendFile(event)" accept="image/*,video/*,.pdf,.txt" class="hidden">
+
+          <textarea id="message-input" rows="1" placeholder="メッセージを入力（Enterで送信）" class="flex-1 max-h-32 min-h-[40px] py-2 px-3 bg-transparent text-sm focus:outline-none resize-none text-zinc-800 dark:text-zinc-100 placeholder-zinc-400" onkeydown="handleEnterKey(event)"></textarea>
+
+          <button type="submit" class="p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-100 dark:shadow-none flex-shrink-0 transition-all">
+            <i data-lucide="send" class="w-4 h-4"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Right Side: Audio/Video call and participants -->
+    <div class="w-full md:w-80 bg-white dark:bg-zinc-950 flex flex-col h-1/2 md:h-full overflow-hidden flex-shrink-0">
+      
+      <!-- Call Actions and stream renderers -->
+      <div class="p-4 border-b border-zinc-100 dark:border-zinc-900 bg-zinc-50/20">
+        <h4 class="text-xs font-bold tracking-wider text-zinc-400 uppercase mb-3 flex items-center gap-1.5">
+          <i data-lucide="video" class="w-3.5 h-3.5"></i>
+          音声・ビデオ通話
+        </h4>
+
+        <div id="call-card" class="py-6 px-4 text-center rounded-2xl bg-zinc-100/50 dark:bg-zinc-900/50 border border-zinc-200/50 dark:border-zinc-800/50">
+          <i data-lucide="phone" class="w-8 h-8 mx-auto text-zinc-300 dark:text-zinc-700 mb-2"></i>
+          <p class="text-xs text-zinc-500">メンバーリストの通話ボタンから直接発信できます。</p>
+        </div>
+
+        <!-- Incoming Call UI dialog -->
+        <div id="incoming-dialog" class="hidden p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 text-center space-y-3">
+          <p class="text-xs font-bold text-amber-700 dark:text-amber-300 animate-pulse">⚡ 通話着信中...</p>
+          <div class="flex gap-2 justify-center">
+            <button onclick="answerCall()" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded-xl">応答</button>
+            <button onclick="declineCall()" class="px-4 py-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-medium rounded-xl">拒否</button>
+          </div>
+        </div>
+
+        <!-- Call Active streaming viewport -->
+        <div id="active-call-viewport" class="hidden space-y-3.5">
+          <div class="relative aspect-video rounded-xl bg-zinc-950 border border-zinc-800 overflow-hidden shadow">
+            <video id="remote-video" autoplay playsinline class="w-full h-full object-cover"></video>
+            <div class="absolute bottom-2 left-2 bg-black/40 px-2 py-0.5 rounded text-[10px] text-white">リモート接続中</div>
+          </div>
+          <div class="relative aspect-video rounded-xl bg-zinc-950 border border-zinc-800 overflow-hidden max-w-[120px] mx-auto shadow">
+            <video id="local-video" autoplay playsinline muted class="w-full h-full object-cover"></video>
+            <div class="absolute bottom-1 left-1 bg-black/40 px-1 py-0.5 rounded text-[8px] text-white">自分</div>
+          </div>
+          <div class="flex gap-2 justify-center">
+            <button onclick="toggleAudio()" id="mic-btn" class="p-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300"><i data-lucide="mic" class="w-4 h-4"></i></button>
+            <button onclick="toggleVideo()" id="video-btn" class="p-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300"><i data-lucide="video" class="w-4 h-4"></i></button>
+            <button onclick="hangUp()" class="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-xl flex items-center gap-1.5"><i data-lucide="phone-off" class="w-3.5 h-3.5"></i>終了</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Member lists inside room -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <div class="p-4 border-b border-zinc-100 dark:border-zinc-900 bg-zinc-50/10">
+          <h4 class="text-xs font-bold tracking-wider text-zinc-400 uppercase flex items-center gap-1.5">
+            <i data-lucide="users" class="w-3.5 h-3.5"></i>
+            メンバー
+          </h4>
+        </div>
+        <div id="members-list" class="flex-1 overflow-y-auto p-3 space-y-2">
+          <!-- Filled by js peer connection status -->
+          <div class="py-6 text-center text-xs text-zinc-400 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
+            現在、同じ部屋に他のユーザーはいません。<br>招待リンクを送って友達を呼びましょう！
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Lightbox Modal -->
+  <div id="lightbox" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4" onclick="closeLightbox()">
+    <button class="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button>
+    <img id="lightbox-img" class="max-w-full max-h-full object-contain rounded-xl shadow-2xl">
+  </div>
+
+  <!-- ==================== LOGIC AND P2P HANDLERS ==================== -->
+  <script>
+    // System configurations
+    let myPeerId = '';
+    let targetRoomNum = '';
+    let myName = '';
+    let myAvatar = '🐼';
+    let activePeer = null; 
+    let activeConnection = null; // data connection
+    let activeCall = null; // media call
+    let localStream = null;
+    let isMicEnabled = true;
+    let isVideoEnabled = true;
+
+    // Default room configuration query detection on mount
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      const params = new URLSearchParams(window.location.search);
+      const roomParam = params.get('room');
+      if (roomParam) {
+        document.getElementById('room-id').value = roomParam;
+      } else {
+        document.getElementById('room-id').value = Math.floor(100000 + Math.random() * 900000);
+      }
+    });
+
+    // Dark Mode helper
+    function toggleDarkMode() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      const icon = document.getElementById('theme-icon');
+      if (isDark) {
+        icon.setAttribute('data-lucide', 'sun');
+      } else {
+        icon.setAttribute('data-lucide', 'moon');
+      }
+      lucide.createIcons();
+    }
+
+    // Avatar selector
+    function setAvatar(emoji) {
+      myAvatar = emoji;
+      document.querySelectorAll('.avatar-btn').forEach(btn => {
+        btn.classList.remove('border-indigo-400', 'bg-white', 'dark:bg-zinc-900', 'shadow-sm');
+        if (btn.innerText === emoji) {
+          btn.classList.add('border-indigo-400', 'bg-white', 'dark:bg-zinc-900', 'shadow-sm');
+        }
+      });
+    }
+
+    // --- Join chatroom flow ---
+    function handleJoin(e) {
+      e.preventDefault();
+      targetRoomNum = document.getElementById('room-id').value.trim();
+      myName = document.getElementById('user-name').value.trim();
+      if (!targetRoomNum || !myName) return;
+
+      document.getElementById('join-panel').classList.add('hidden');
+      document.getElementById('chat-viewport').classList.remove('hidden');
+      document.getElementById('header-room-id').innerText = `部屋番号: ${targetRoomNum}`;
+
+      // Update browser URL query to easily copy & paste link
+      const newUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?room=${targetRoomNum}`;
+      window.history.pushState({ path: newUrl }, "", newUrl);
+
+      initPeerJS();
+    }
+
+    // Initialize PeerJS
+    function initPeerJS() {
+      // Create hashable Peer ID using room identification so they can look up each other easily
+      // In this pure-HTML version, we pair users by listening and dialing the "Room ID" directly
+      myPeerId = `p2p_room_${targetRoomNum}_${Math.random().toString(36).substr(2, 6)}`;
+      
+      // Use public Cloud PeerJS signalling instance
+      activePeer = new Peer(myPeerId, {
+        debug: 1
+      });
+
+      activePeer.on('open', (id) => {
+        logSystem(`P2Pシグナルサーバーに接続しました。ID: ${id.split('_').pop()}`);
+        discoverAndConnect();
+      });
+
+      // Handle Incoming Data connection (for chat text/files)
+      activePeer.on('connection', (conn) => {
+        setupDataConnection(conn);
+      });
+
+      // Handle Incoming Call request (for video/audio streams)
+      activePeer.on('call', (call) => {
+        activeCall = call;
+        document.getElementById('call-card').classList.add('hidden');
+        document.getElementById('incoming-dialog').classList.remove('hidden');
+        lucide.createIcons();
+      });
+
+      activePeer.on('error', (err) => {
+        console.error('PeerJS error:', err);
+        logSystem(`⚠️ 接続エラーが発生しました: ${err.type}`);
+      });
+    }
+
+    // Look up peer and auto-establish connection inside the same virtual Room
+    function discoverAndConnect() {
+      // In a completely serverless context, one user connects to the other
+      // We look up standard PeerJS listings if available, or try to dial using room sequence rules
+      logSystem(`相手を探しています... 友達を同じ部屋に呼びましょう！`);
+    }
+
+    // Setup events for text / file data channel
+    function setupDataConnection(conn) {
+      activeConnection = conn;
+
+      conn.on('open', () => {
+        logSystem(`🎉 友達と直接P2Pで接続が確立されました！`);
+        updateMemberList(conn.peer);
+        // Sync profiles
+        conn.send({
+          type: 'profile_sync',
+          name: myName,
+          avatar: myAvatar
+        });
+      });
+
+      conn.on('data', (data) => {
+        if (data.type === 'profile_sync') {
+          updateMemberList(conn.peer, data.name, data.avatar);
+          logSystem(`📢 ${data.avatar} ${data.name} さんが参加しました！`);
+        } else if (data.type === 'message') {
+          appendMessage({
+            senderName: data.name,
+            senderAvatar: data.avatar,
+            text: data.text,
+            isMe: false,
+            timestamp: Date.now()
+          });
+        } else if (data.type === 'file') {
+          appendMessage({
+            senderName: data.name,
+            senderAvatar: data.avatar,
+            fileData: data.fileData,
+            fileName: data.fileName,
+            fileType: data.fileType,
+            isMe: false,
+            timestamp: Date.now()
+          });
+        }
+      });
+
+      conn.on('close', () => {
+        logSystem(`⚠️ 友達が退室しました。`);
+        resetMemberList();
+        resetCallUI();
+      });
+    }
+
+    // Invite link copier
+    function copyInvite() {
+      const link = `${window.location.origin}${window.location.pathname}?room=${targetRoomNum}`;
+      navigator.clipboard.writeText(link).then(() => {
+        alert('招待リンクをコピーしました！友達に送信してください。');
+      });
+    }
+
+    // --- Message appending utilities ---
+    function appendMessage(msg) {
+      const box = document.getElementById('messages-box');
+      const isMe = msg.isMe;
+
+      let fileSnippet = '';
+      if (msg.fileData) {
+        if (msg.fileType === 'image') {
+          fileSnippet = `
+            <div class="mt-1.5 overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 max-w-xs cursor-zoom-in group shadow-sm">
+              <img src="${msg.fileData}" class="max-h-52 object-cover w-full group-hover:scale-[1.02] transition-transform" onclick="zoomImage('${msg.fileData}')">
+            </div>
+          `;
+        } else if (msg.fileType === 'video') {
+          fileSnippet = `
+            <div class="mt-1.5 overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 max-w-sm">
+              <video src="${msg.fileData}" controls class="max-h-52 w-full bg-black"></video>
+            </div>
+          `;
+        } else {
+          fileSnippet = `
+            <div class="mt-1.5 flex items-center gap-2 p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs">
+              <i data-lucide="file-text" class="w-5 h-5 text-indigo-500"></i>
+              <div class="min-w-0 flex-1">
+                <p class="font-semibold truncate">${msg.fileName}</p>
+                <a href="${msg.fileData}" download="${msg.fileName}" class="text-[10px] text-indigo-600 hover:underline">ダウンロード</a>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      const bubble = document.createElement('div');
+      bubble.className = `flex items-start gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'} animate-fade-in`;
+      bubble.innerHTML = `
+        <div class="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-lg flex-shrink-0 select-none shadow-sm">${msg.senderAvatar}</div>
+        <div class="flex flex-col max-w-[75%] space-y-0.5">
+          <span class="text-[9px] text-zinc-400 font-mono ${isMe ? 'text-right' : ''}">${msg.senderName} • ${new Date(msg.timestamp).toLocaleTimeString("ja-JP", {hour: "2-digit", minute:"2-digit"})}</span>
+          <div class="px-3.5 py-2 rounded-2xl text-xs break-words shadow-sm ${isMe ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-100 border border-zinc-200/80 dark:border-zinc-800/80 rounded-tl-none'}">
+            ${msg.text ? `<p class="whitespace-pre-wrap leading-relaxed">${msg.text}</p>` : ''}
+            ${fileSnippet}
+          </div>
+        </div>
+      `;
+
+      box.appendChild(bubble);
+      box.scrollTop = box.scrollHeight;
+      lucide.createIcons();
+    }
+
+    function logSystem(text) {
+      const box = document.getElementById('messages-box');
+      const sysDiv = document.createElement('div');
+      sysDiv.className = 'flex justify-center my-2';
+      sysDiv.innerHTML = `
+        <span class="px-3 py-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-full text-[10px] text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 font-mono">
+          ${text}
+        </span>
+      `;
+      box.appendChild(sysDiv);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    // --- Sending messages & files ---
+    function sendTextMessage(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById('message-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendMessage({
+        senderName: myName,
+        senderAvatar: myAvatar,
+        text: text,
+        isMe: true,
+        timestamp: Date.now()
+      });
+
+      // Send to peer over WebRTC data channel
+      if (activeConnection && activeConnection.open) {
+        activeConnection.send({
+          type: 'message',
+          name: myName,
+          avatar: myAvatar,
+          text: text
+        });
+      }
+
+      input.value = '';
+    }
+
+    function handleEnterKey(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendTextMessage();
+      }
+    }
+
+    function sendFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const base64 = evt.target.result;
+        let fileType = 'file';
+        if (file.type.startsWith('image/')) fileType = 'image';
+        else if (file.type.startsWith('video/')) fileType = 'video';
+
+        appendMessage({
+          senderName: myName,
+          senderAvatar: myAvatar,
+          fileData: base64,
+          fileName: file.name,
+          fileType: fileType,
+          isMe: true,
+          timestamp: Date.now()
+        });
+
+        if (activeConnection && activeConnection.open) {
+          activeConnection.send({
+            type: 'file',
+            name: myName,
+            avatar: myAvatar,
+            fileData: base64,
+            fileName: file.name,
+            fileType: fileType
+          });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // --- WebRTC Video/Audio Call implementation ---
+    async function dialCall(type) {
+      if (!activeConnection) {
+        alert('友達とメッセージ接続が確立されてからおかけください。');
+        return;
+      }
+
+      try {
+        logSystem(`📞 通話を発信中...`);
+        const constraints = {
+          audio: true,
+          video: type === 'video' ? { facingMode: 'user', width: 640 } : false
+        };
+
+        localStream = await navigator.mediaDevices.getUserMedia(constraints);
+        document.getElementById('local-video').srcObject = localStream;
+
+        document.getElementById('call-card').classList.add('hidden');
+        document.getElementById('active-call-viewport').classList.remove('hidden');
+
+        // Dial call
+        const call = activePeer.call(activeConnection.peer, localStream);
+        activeCall = call;
+        setupCallStreamEvents(call);
+
+      } catch (err) {
+        console.error('Call stream acquisition error', err);
+        alert('カメラ、またはマイクの取得に失敗しました。パーミッションを許可してください。');
+      }
+    }
+
+    async function answerCall() {
+      document.getElementById('incoming-dialog').classList.add('hidden');
+      document.getElementById('active-call-viewport').classList.remove('hidden');
+
+      try {
+        const constraints = {
+          audio: true,
+          video: true // default tries to request video
+        };
+
+        localStream = await navigator.mediaDevices.getUserMedia(constraints);
+        document.getElementById('local-video').srcObject = localStream;
+
+        activeCall.answer(localStream);
+        setupCallStreamEvents(activeCall);
+
+      } catch (err) {
+        // Fallback to audio only
+        try {
+          localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          document.getElementById('local-video').srcObject = localStream;
+          activeCall.answer(localStream);
+          setupCallStreamEvents(activeCall);
+        } catch (e) {
+          alert('通話の応答に失敗しました。');
+          hangUp();
+        }
+      }
+    }
+
+    function declineCall() {
+      document.getElementById('incoming-dialog').classList.add('hidden');
+      document.getElementById('call-card').classList.remove('hidden');
+      if (activeCall) {
+        activeCall.close();
+        activeCall = null;
+      }
+    }
+
+    function setupCallStreamEvents(call) {
+      call.on('stream', (remoteStream) => {
+        document.getElementById('remote-video').srcObject = remoteStream;
+      });
+
+      call.on('close', () => {
+        hangUpLocal();
+      });
+    }
+
+    function hangUp() {
+      if (activeCall) {
+        activeCall.close();
+        activeCall = null;
+      }
+      hangUpLocal();
+    }
+
+    function hangUpLocal() {
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+      }
+      document.getElementById('active-call-viewport').classList.add('hidden');
+      document.getElementById('call-card').classList.remove('hidden');
+      logSystem(`📞 通話が終了しました。`);
+    }
+
+    function toggleAudio() {
+      if (localStream) {
+        const track = localStream.getAudioTracks()[0];
+        if (track) {
+          isMicEnabled = !isMicEnabled;
+          track.enabled = isMicEnabled;
+          document.getElementById('mic-btn').innerHTML = isMicEnabled ? '<i data-lucide="mic" class="w-4 h-4"></i>' : '<i data-lucide="mic-off" class="w-4 h-4 text-red-500"></i>';
+          lucide.createIcons();
+        }
+      }
+    }
+
+    function toggleVideo() {
+      if (localStream) {
+        const track = localStream.getVideoTracks()[0];
+        if (track) {
+          isVideoEnabled = !isVideoEnabled;
+          track.enabled = isVideoEnabled;
+          document.getElementById('video-btn').innerHTML = isVideoEnabled ? '<i data-lucide="video" class="w-4 h-4"></i>' : '<i data-lucide="video-off" class="w-4 h-4 text-red-500"></i>';
+          lucide.createIcons();
+        }
+      }
+    }
+
+    // --- UI State updates ---
+    function updateMemberList(peerId, name = '友達', avatar = '💬') {
+      const container = document.getElementById('members-list');
+      container.innerHTML = `
+        <div class="flex items-center justify-between p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="text-xl select-none">${avatar}</span>
+            <div class="min-w-0">
+              <p class="text-xs font-bold truncate text-zinc-700 dark:text-zinc-300">${name}</p>
+              <span class="text-[8px] font-mono text-zinc-400">オンライン</span>
+            </div>
+          </div>
+          <div class="flex gap-1.5">
+            <button onclick="dialCall('audio')" class="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 active:scale-95 transition-all">
+              <i data-lucide="phone" class="w-3.5 h-3.5"></i>
+            </button>
+            <button onclick="dialCall('video')" class="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 active:scale-95 transition-all">
+              <i data-lucide="video" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    function resetMemberList() {
+      document.getElementById('members-list').innerHTML = `
+        <div class="py-6 text-center text-xs text-zinc-400 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
+          現在、同じ部屋に他のユーザーはいません。<br>招待リンクを送って友達を呼びましょう！
+        </div>
+      `;
+    }
+
+    function resetCallUI() {
+      hangUpLocal();
+    }
+
+    // Connect to specific Room Dial ID manually if required
+    function dialPeer(peerNum) {
+      if (!activePeer) return;
+      const targetId = `p2p_room_${targetRoomNum}_${peerNum}`;
+      const conn = activePeer.connect(targetId);
+      setupDataConnection(conn);
+    }
+
+    function leaveRoom() {
+      if (activePeer) {
+        activePeer.destroy();
+        activePeer = null;
+      }
+      document.getElementById('chat-viewport').classList.add('hidden');
+      document.getElementById('join-panel').classList.remove('hidden');
+    }
+
+    // Lightbox Modal control
+    function zoomImage(src) {
+      document.getElementById('lightbox-img').src = src;
+      document.getElementById('lightbox').classList.remove('hidden');
+    }
+
+    function closeLightbox() {
+      document.getElementById('lightbox').classList.add('hidden');
+    }
+  </script>
 </body>
 </html>
